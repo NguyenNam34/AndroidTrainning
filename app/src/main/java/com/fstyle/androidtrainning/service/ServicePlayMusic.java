@@ -2,34 +2,48 @@ package com.fstyle.androidtrainning.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.IBinder;
-import android.provider.MediaStore;
 import com.fstyle.androidtrainning.data.local.storage.ExternalData;
-import java.util.List;
+import com.fstyle.androidtrainning.model.Track;
+import com.fstyle.androidtrainning.utils.Constant;
+import java.io.IOException;
 
-public class ServicePlayMusic extends Service{
+public class ServicePlayMusic extends Service {
 
-    private List<Integer> mLenght;
     private MediaPlayer mMediaPlayer;
     private Uri mUri;
-    private ExternalData mExternalData;
-    private int mediaLenght = 0;
-    private int position = 0;
+    private ExternalData mExternalData = new ExternalData();
+    private int id = 0;
+    private int mediaLength = 0;
+    private IBinder mIBinder = new LocalBinder();
+
+    public class LocalBinder extends Binder {
+        public ServicePlayMusic getService() {
+            return ServicePlayMusic.this;
+        }
+    }
 
     public ServicePlayMusic() {
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
+        Track track = intent.getParcelableExtra(Constant.EXTRA_TRACK_ITEM);
+        id = track.getPosition();
+        playMusic();
+        return mIBinder;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        mExternalData.scanAllMusic(this);
+        mExternalData.scanAllAlbum(this);
+        mExternalData.scanAllArtist(this);
     }
 
     @Override
@@ -43,35 +57,76 @@ public class ServicePlayMusic extends Service{
         super.onDestroy();
     }
 
-    public void playMusic(){
+    private void createMusic(int id) {
+        try {
+            String path = mExternalData.getArrayListTrack().get(id).getTrackData();
+            mUri = Uri.parse(path);
+            mMediaPlayer = new MediaPlayer();
+            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mMediaPlayer.setDataSource(path);
+            mMediaPlayer.prepare();
+            MediaPlayer.create(getApplicationContext(), mUri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void playMusic() {
+        createMusic(id);
         mMediaPlayer.start();
     }
 
-    public void pauseMusic(){
-        if (mMediaPlayer.isPlaying()){
-            mediaLenght = mMediaPlayer.getCurrentPosition();
+    public void pauseMusic() {
+        if (mMediaPlayer.isPlaying()) {
             mMediaPlayer.pause();
         }
     }
 
-    public void forwardMusic(){
-        if (mMediaPlayer.isPlaying()){
-            mMediaPlayer.stop();
-            mMediaPlayer.release();
-            mMediaPlayer = MediaPlayer.create(this, mLenght.get(position));
-            mMediaPlayer.start();
-        }else {
-            mMediaPlayer = MediaPlayer.create(this, mLenght.get(position));
+    public void resumeMusic() {
+        if (!mMediaPlayer.isPlaying()) {
             mMediaPlayer.start();
         }
     }
 
-    public void seekMusic(){
-        mMediaPlayer.seekTo(mediaLenght);
-    }
-
-    public void stopMusic(){
+    public void nextTrack() {
         mMediaPlayer.stop();
         mMediaPlayer.release();
+        id++;
+        if (id < mExternalData.getArrayListTrack().size()) {
+            playMusic();
+        } else {
+            id = 0;
+            playMusic();
+        }
+    }
+
+    public void previousTrack() {
+        mMediaPlayer.stop();
+        mMediaPlayer.release();
+        id--;
+        if (id >= 0) {
+            playMusic();
+        } else {
+            id = mExternalData.getArrayListTrack().size() - 1;
+            playMusic();
+        }
+    }
+
+    public void seekMusic() {
+        if (mMediaPlayer.isPlaying()) {
+            mMediaPlayer.seekTo(mediaLength);
+        }
+    }
+
+    public MediaPlayer getMediaPlayer() {
+        return mMediaPlayer;
+    }
+
+    public int getMediaLength() {
+        return mediaLength;
+    }
+
+    public void setMediaLength(int mediaLength) {
+        this.mediaLength = mediaLength;
     }
 }

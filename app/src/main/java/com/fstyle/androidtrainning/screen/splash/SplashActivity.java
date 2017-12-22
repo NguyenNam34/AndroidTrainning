@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
@@ -22,6 +23,7 @@ public class SplashActivity extends BaseActivity {
     public static final int REQUEST_PERMISSION_CODE = 101;
     public static final int TIME_HANDLER = 3000;
     public static final int SDK_DEFAULT = 23;
+    private String TAG = "chuong";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,11 +31,10 @@ public class SplashActivity extends BaseActivity {
         setContentView(R.layout.activity_splash);
 
         //permission
-//        requestStoragePermissions();
-
+        requestStoragePermissions();
+        Log.d(TAG, "onCreate: " + Build.VERSION.SDK_INT);
         initViews();
         doAnimation();
-        doGoToMainActivity();
     }
 
     private void initViews() {
@@ -60,35 +61,37 @@ public class SplashActivity extends BaseActivity {
         mHandler.postDelayed(mRunnable, TIME_HANDLER);
     }
 
-//    private void requestStoragePermissions() {
-//        if (Build.VERSION.SDK_INT >= SDK_DEFAULT) {
-//            if (ActivityCompat.checkSelfPermission(SplashActivity.this,
-//                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-//                    != PackageManager.PERMISSION_GRANTED) {
-//                ActivityCompat.requestPermissions(SplashActivity.this, new String[] {
-//                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-//                }, REQUEST_PERMISSION_CODE);
-//            } else {
-//                doGoToMainActivity();
-//            }
-//        }
-//    }
+    private void requestStoragePermissions() {
+        if (Build.VERSION.SDK_INT >= SDK_DEFAULT) {
+            if (ActivityCompat.checkSelfPermission(SplashActivity.this,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(SplashActivity.this, new String[] {
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                }, REQUEST_PERMISSION_CODE);
+            } else {
+                doGoToMainActivity();
+            }
+        } else {
+            doGoToMainActivity();
+        }
+    }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-//            @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        switch (requestCode) {
-//            case REQUEST_PERMISSION_CODE:
-//                // If request is cancelled, the result arrays are empty.
-//                if (grantResults.length > 0
-//                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                    startActivity(new Intent(SplashActivity.this, MainActivity.class));
-//                    finish();
-//                } else {
-//                    finish();
-//                }
-//                break;
-//        }
-//    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case REQUEST_PERMISSION_CODE:
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startActivity(new Intent(SplashActivity.this, MainActivity.class));
+                    finish();
+                } else {
+                    finish();
+                }
+                break;
+        }
+    }
 }
